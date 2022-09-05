@@ -1,4 +1,4 @@
-# ebiten-collider
+# ebiten-anim
 
 Create a SpriteSheet to easily select parts of an image and create animations from them.
 
