@@ -56,6 +56,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Translate(-float64(w), -float64(h))
 		op.GeoM.Rotate(math.Pi / 4)
 		screen.DrawImage(surface, op)
+
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(8, 8)
+		screen.DrawImage(SpriteSheet.PaddedImage, op)
 		return
 	}
 	alreadyDrew = true
