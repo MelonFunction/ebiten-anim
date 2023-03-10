@@ -3,7 +3,6 @@ package anim
 
 import (
 	"image"
-	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,7 +14,6 @@ type SpriteSheet struct {
 	PaddedImage *ebiten.Image
 	Sprites     []*ebiten.Image
 
-	Padding      int // how much padding/clamp to add around sprites
 	SpriteWidth  int // how big each sprite is
 	SpriteHeight int
 	SpritesWide  int // how many sprites are in the sheet
@@ -25,12 +23,12 @@ type SpriteSheet struct {
 }
 
 // NewSpriteSheet returns a new SpriteSheet
-func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64) *SpriteSheet {
+// Use padding==true if you're creating a tilesheet
+func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64, usePadding bool) *SpriteSheet {
 	w, h := img.Size()
 
 	s := &SpriteSheet{
 		Image:        img,
-		Padding:      2,
 		SpriteWidth:  spriteWidth,
 		SpriteHeight: spriteHeight,
 		SpritesWide:  w / spriteWidth,
@@ -38,14 +36,44 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 		Scale:        scale,
 	}
 
-	paddedImg := ebiten.NewImage(w+(s.SpritesWide+1)*s.Padding, h+(s.SpritesHigh+1)*s.Padding)
-	paddedImg.Fill(color.RGBA{255, 0, 255, 255})
+	p := 2
+	paddedImg := ebiten.NewImage(w+(s.SpritesWide+1)*p, h+(s.SpritesHigh+1)*p)
+	// paddedImg.Fill(color.RGBA{255, 0, 255, 255})
 
 	s.Sprites = make([]*ebiten.Image, s.SpritesWide*s.SpritesHigh)
 	for x := 0; x < s.SpritesWide; x++ {
 		for y := 0; y < s.SpritesHigh; y++ {
-			dx := float64(spriteWidth)*float64(x) + float64(s.Padding)*(float64(x)+1)
-			dy := float64(spriteHeight)*float64(y) + float64(s.Padding)*(float64(y)+1)
+			dx := float64(spriteWidth)*float64(x) + float64(p)*(float64(x)+1)
+			dy := float64(spriteHeight)*float64(y) + float64(p)*(float64(y)+1)
+
+			// draw padding first
+			if usePadding {
+				d := func(op *ebiten.DrawImageOptions) {
+					paddedImg.DrawImage(img.SubImage(
+						image.Rect(
+							x*s.SpriteWidth,
+							y*s.SpriteHeight,
+							(x+1)*s.SpriteWidth,
+							(y+1)*s.SpriteHeight,
+						)).(*ebiten.Image), op)
+				}
+				for zx := -p / 2; zx <= p/2; zx++ {
+					if zx != 0 {
+						op := &ebiten.DrawImageOptions{}
+						op.GeoM.Translate(dx+float64(zx), dy)
+						d(op)
+					}
+				}
+				for zy := -p / 2; zy <= p/2; zy++ {
+					if zy != 0 {
+						op := &ebiten.DrawImageOptions{}
+						op.GeoM.Translate(dx, dy+float64(zy))
+						d(op)
+					}
+				}
+			}
+
+			// actual sprite
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(
 				dx, dy)
@@ -68,7 +96,7 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 	}
 
 	// add the actual padding, remember that subimages share the parent image's pixels
-	// halfPadding := float64(s.Padding)/2
+	// halfPadding := float64(p)/2
 	// w, h = paddedImg.Size()
 	// for y := 0; y < h; {
 	// 	for x := 0; x < w; x++ {
@@ -76,7 +104,7 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 	// 			paddedImg.Set(x, y, paddedImg.At(x, y+1))
 	// 		}
 	// 	}
-	// 	y += spriteHeight + s.Padding
+	// 	y += spriteHeight + p
 	// }
 
 	s.PaddedImage = paddedImg
