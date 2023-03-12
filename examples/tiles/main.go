@@ -101,7 +101,7 @@ func main() {
 	if b, err := embedded.ReadFile("tiles.png"); err == nil {
 		if s, err := png.Decode(bytes.NewReader(b)); err == nil {
 			sprites := ebiten.NewImageFromImage(s)
-			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 8, 4, true)
+			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 8, 4)
 		}
 	} else {
 		log.Fatal(err)

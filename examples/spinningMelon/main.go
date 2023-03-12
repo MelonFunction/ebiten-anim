@@ -94,7 +94,7 @@ func main() {
 		if s, err := png.Decode(bytes.NewReader(b)); err == nil {
 			sprites := ebiten.NewImageFromImage(s)
 
-			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 10, 16, false)
+			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 10, 16)
 
 			duration := time.Second / 20 // 20 fps animation
 			frames := make([]anim.Frame, 5)

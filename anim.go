@@ -25,7 +25,7 @@ type SpriteSheet struct {
 
 // NewSpriteSheet returns a new SpriteSheet
 // Use padding==true if you're creating a tilesheet
-func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64, usePadding bool) *SpriteSheet {
+func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64) *SpriteSheet {
 	w, h := img.Size()
 
 	s := &SpriteSheet{
@@ -50,29 +50,27 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 			dy := float64(spriteHeight)*float64(y) + float64(p)*(float64(y)+1)
 
 			// draw padding first
-			if usePadding {
-				d := func(op *ebiten.DrawImageOptions) {
-					paddedImg.DrawImage(img.SubImage(
-						image.Rect(
-							x*s.SpriteWidth,
-							y*s.SpriteHeight,
-							(x+1)*s.SpriteWidth,
-							(y+1)*s.SpriteHeight,
-						)).(*ebiten.Image), op)
+			d := func(op *ebiten.DrawImageOptions) {
+				paddedImg.DrawImage(img.SubImage(
+					image.Rect(
+						x*s.SpriteWidth,
+						y*s.SpriteHeight,
+						(x+1)*s.SpriteWidth,
+						(y+1)*s.SpriteHeight,
+					)).(*ebiten.Image), op)
+			}
+			for zx := -p / 2; zx <= p/2; zx++ {
+				if zx != 0 {
+					op := &ebiten.DrawImageOptions{}
+					op.GeoM.Translate(dx+float64(zx), dy)
+					d(op)
 				}
-				for zx := -p / 2; zx <= p/2; zx++ {
-					if zx != 0 {
-						op := &ebiten.DrawImageOptions{}
-						op.GeoM.Translate(dx+float64(zx), dy)
-						d(op)
-					}
-				}
-				for zy := -p / 2; zy <= p/2; zy++ {
-					if zy != 0 {
-						op := &ebiten.DrawImageOptions{}
-						op.GeoM.Translate(dx, dy+float64(zy))
-						d(op)
-					}
+			}
+			for zy := -p / 2; zy <= p/2; zy++ {
+				if zy != 0 {
+					op := &ebiten.DrawImageOptions{}
+					op.GeoM.Translate(dx, dy+float64(zy))
+					d(op)
 				}
 			}
 
