@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"embed"
 	"errors"
+	"image/color"
 	"image/png"
 	"log"
 	"math"
@@ -56,6 +57,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Translate(-float64(w), -float64(h))
 		op.GeoM.Rotate(math.Pi / 4)
 		screen.DrawImage(surface, op)
+
+		fill := ebiten.NewImageFromImage(SpriteSheet.PaddedImage)
+		fill.Fill(color.RGBA{0, 0, 0, 255})
+		op = &ebiten.DrawImageOptions{}
+		op.GeoM.Scale(8, 8)
+		screen.DrawImage(fill, op)
 
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(8, 8)

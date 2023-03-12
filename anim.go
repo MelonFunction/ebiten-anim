@@ -3,6 +3,7 @@ package anim
 
 import (
 	"image"
+	"image/color"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -38,6 +39,8 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 
 	p := 2
 	paddedImg := ebiten.NewImage(w+(s.SpritesWide+1)*p, h+(s.SpritesHigh+1)*p)
+	eraser := ebiten.NewImage(spriteWidth, spriteHeight)
+	eraser.Fill(color.RGBA{255, 255, 255, 255})
 	// paddedImg.Fill(color.RGBA{255, 0, 255, 255})
 
 	s.Sprites = make([]*ebiten.Image, s.SpritesWide*s.SpritesHigh)
@@ -73,8 +76,14 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 				}
 			}
 
-			// actual sprite
+			// clear area, if a tile isn't full width, it'll be the wrong size (2px will be increased to 4px wide!)
 			op := &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(dx, dy)
+			op.CompositeMode = ebiten.CompositeModeClear
+			paddedImg.DrawImage(eraser, op)
+
+			// draw the sprite itself
+			op = &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(
 				dx, dy)
 			paddedImg.DrawImage(img.SubImage(
@@ -85,6 +94,7 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 					(y+1)*s.SpriteHeight,
 				)).(*ebiten.Image), op)
 
+			// save subimage/reference
 			s.Sprites[x+y*s.SpritesWide] = paddedImg.SubImage(
 				image.Rect(
 					int(dx),
@@ -94,18 +104,6 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 				)).(*ebiten.Image)
 		}
 	}
-
-	// add the actual padding, remember that subimages share the parent image's pixels
-	// halfPadding := float64(p)/2
-	// w, h = paddedImg.Size()
-	// for y := 0; y < h; {
-	// 	for x := 0; x < w; x++ {
-	// 		if y+1 < h {
-	// 			paddedImg.Set(x, y, paddedImg.At(x, y+1))
-	// 		}
-	// 	}
-	// 	y += spriteHeight + p
-	// }
 
 	s.PaddedImage = paddedImg
 
