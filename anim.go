@@ -24,7 +24,6 @@ type SpriteSheet struct {
 }
 
 // NewSpriteSheet returns a new SpriteSheet
-// Use padding==true if you're creating a tilesheet
 func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64) *SpriteSheet {
 	w, h := img.Size()
 
