@@ -10,7 +10,9 @@ Look at [the example](https://github.com/melonfunction/ebiten-anim/tree/master/e
 
 ```go
 // Create a spritesheet
-SpriteSheet := anim.NewSpriteSheet(sprites, 8, 10, 16)
+SpriteSheet = anim.NewSpriteSheet(sprites, 8, 10, anim.SpriteSheetOptions{
+    Scale: 16,
+})
 
 // Create an animation
 frames := make([]anim.Frame, 5)
