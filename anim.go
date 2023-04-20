@@ -120,7 +120,7 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 			for zy := -options.OutlineThickness; zy <= options.OutlineThickness; zy++ {
 				for zx := -options.OutlineThickness; zx <= options.OutlineThickness; zx++ {
 					op := &ebiten.DrawImageOptions{}
-					op.ColorM.Scale(0, 0, 0, 1)
+					op.ColorM.Scale(0, 0, 0, 100)
 					op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
 					op.GeoM.Translate(
 						dx+float64(zx)/float64(options.Scale),
@@ -129,6 +129,22 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 					d(op)
 				}
 			}
+
+			// cut out sprite from the outline
+			op = &ebiten.DrawImageOptions{}
+			op.GeoM.Translate(
+				dx, dy)
+			op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
+			op.ColorM.Scale(0, 0, 0, 100)
+			op.ColorM.Translate(1000/0xff, 1000/0xff, 1000/0xff, 0)
+			op.CompositeMode = ebiten.CompositeModeDestinationOut
+			paddedImg.DrawImage(img.SubImage(
+				image.Rect(
+					x*s.SpriteWidth,
+					y*s.SpriteHeight,
+					(x+1)*s.SpriteWidth,
+					(y+1)*s.SpriteHeight,
+				)).(*ebiten.Image), op)
 
 			// draw the sprite itself
 			op = &ebiten.DrawImageOptions{}
