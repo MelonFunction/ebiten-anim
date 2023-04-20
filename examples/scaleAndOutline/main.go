@@ -59,7 +59,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		screen.DrawImage(surface, op)
 
 		fill := ebiten.NewImageFromImage(SpriteSheet.PaddedImage)
-		fill.Fill(color.RGBA{0, 0, 0, 255})
+		fill.Fill(color.RGBA{128, 0, 128, 128})
 		op = &ebiten.DrawImageOptions{}
 		op.GeoM.Scale(8, 8)
 		screen.DrawImage(fill, op)
@@ -75,8 +75,9 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		for y := 0; y < h/int(float64(SpriteSheet.SpriteHeight)); y++ {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(
-				float64(SpriteSheet.SpriteWidth)*float64(x)*1.2, // add a lil space between tiles
-				float64(SpriteSheet.SpriteHeight)*float64(y)*1.2)
+				float64(SpriteSheet.SpriteWidth)*float64(x)*2, // add a lil space between tiles
+				float64(SpriteSheet.SpriteHeight)*float64(y)*2)
+			// surface.DrawImage(SpriteSheet.GetSprite(rand.Int()%2, rand.Int()%2), op)
 			surface.DrawImage(SpriteSheet.GetSprite(1, 1+rand.Int()%3), op)
 		}
 	}
@@ -92,7 +93,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func main() {
 	game := &Game{}
 	ebiten.SetWindowSize(WindowWidth, WindowHeight)
-	ebiten.SetWindowTitle("Tiles example")
+	ebiten.SetWindowTitle("Scale and outline example")
 	ebiten.SetWindowResizable(true)
 
 	surface = ebiten.NewImage(ebiten.WindowSize())
@@ -101,7 +102,9 @@ func main() {
 		if s, err := png.Decode(bytes.NewReader(b)); err == nil {
 			sprites := ebiten.NewImageFromImage(s)
 			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 8, anim.SpriteSheetOptions{
-				Scale: 2,
+				Scale:            2,
+				OutlineThickness: 1,
+				OutlineColor:     color.RGBA{255, 0, 0, 255},
 			})
 		}
 	} else {

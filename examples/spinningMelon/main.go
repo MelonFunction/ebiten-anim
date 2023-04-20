@@ -66,11 +66,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	op := &ebiten.DrawImageOptions{}
 
 	// Draw the first frame at the top left corner of the screen
-	op.GeoM.Scale(SpriteSheet.Scale, SpriteSheet.Scale)
 	screen.DrawImage(SpriteSheet.GetSprite(0, 0), op)
 
 	// Draw the animation in the center of the screen
-	w, h := SpriteSheet.SpriteWidth*int(SpriteSheet.Scale), SpriteSheet.SpriteHeight*int(SpriteSheet.Scale)
+	w, h := SpriteSheet.SpriteWidth, SpriteSheet.SpriteHeight
 	op.GeoM.Translate(float64(WindowWidth)/2-float64(w)/2, float64(WindowHeight)/2-float64(h)/2)
 	Animation.Draw(screen, op)
 
@@ -94,7 +93,9 @@ func main() {
 		if s, err := png.Decode(bytes.NewReader(b)); err == nil {
 			sprites := ebiten.NewImageFromImage(s)
 
-			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 10, 16)
+			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 10, anim.SpriteSheetOptions{
+				Scale: 16,
+			})
 
 			duration := time.Second / 20 // 20 fps animation
 			frames := make([]anim.Frame, 5)

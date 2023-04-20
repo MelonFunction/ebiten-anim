@@ -6,15 +6,15 @@
         {
             "label": "go run",
             "type": "shell",
-            "command": "go run ./examples/tiles",
-            "problemMatcher": [],
+            "command": "go run ./examples/scaleAndOutline",
+            "problemMatcher": [ ],
             "presentation": {
-                "echo": false,
-                "reveal": "never",
+                "echo": true,
+                "reveal": "always",
                 "focus": false,
                 "panel": "shared",
                 "showReuseMessage": true,
-                "clear": false
+                "clear": true
             },
             "group": {
                 "kind": "build",

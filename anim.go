@@ -4,6 +4,7 @@ package anim
 import (
 	"image"
 	"image/color"
+	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -20,33 +21,58 @@ type SpriteSheet struct {
 	SpritesWide  int // how many sprites are in the sheet
 	SpritesHigh  int
 
-	Scale float64 // convenience variable for storing scale for use with GeoM
+	Scale            int
+	OutlineThickness int
+	OutlineColor     color.RGBA
+}
+
+// SpriteSheetOptions are the options which are passed to the NewSpriteSheet function
+type SpriteSheetOptions struct {
+	Scale            int
+	OutlineThickness int
+	OutlineColor     color.RGBA
 }
 
 // NewSpriteSheet returns a new SpriteSheet
-func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale float64) *SpriteSheet {
+func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, options SpriteSheetOptions) *SpriteSheet {
 	w, h := img.Size()
+
+	defaultOptions := SpriteSheetOptions{
+		Scale:            1,
+		OutlineThickness: 0,
+		OutlineColor:     color.RGBA{255, 255, 255, 255},
+	}
+
+	if options.Scale == 0 {
+		options.Scale = defaultOptions.Scale
+	}
+	if options.OutlineThickness == 0 {
+		options.OutlineThickness = defaultOptions.OutlineThickness
+		options.OutlineColor = defaultOptions.OutlineColor
+	}
 
 	s := &SpriteSheet{
 		Image:        img,
-		SpriteWidth:  spriteWidth,
-		SpriteHeight: spriteHeight,
-		SpritesWide:  w / spriteWidth,
-		SpritesHigh:  h / spriteHeight,
-		Scale:        scale,
+		SpriteWidth:  origSpriteWidth,
+		SpriteHeight: origSpriteHeight,
+		SpritesWide:  w / origSpriteWidth,
+		SpritesHigh:  h / origSpriteHeight,
+		Scale:        options.Scale,
 	}
 
-	p := 2
-	paddedImg := ebiten.NewImage(w+(s.SpritesWide+1)*p, h+(s.SpritesHigh+1)*p)
-	eraser := ebiten.NewImage(spriteWidth, spriteHeight)
+	p := 2 + options.OutlineThickness*2
+	paddedImg := ebiten.NewImage(
+		(w+(s.SpritesWide+1)*p)*options.Scale,
+		(h+(s.SpritesHigh+1)*p)*options.Scale)
+	eraser := ebiten.NewImage(origSpriteWidth+options.OutlineThickness*2, origSpriteHeight+options.OutlineThickness*2)
 	eraser.Fill(color.RGBA{255, 255, 255, 255})
 	// paddedImg.Fill(color.RGBA{255, 0, 255, 255})
 
 	s.Sprites = make([]*ebiten.Image, s.SpritesWide*s.SpritesHigh)
 	for x := 0; x < s.SpritesWide; x++ {
 		for y := 0; y < s.SpritesHigh; y++ {
-			dx := float64(spriteWidth)*float64(x) + float64(p)*(float64(x)+1)
-			dy := float64(spriteHeight)*float64(y) + float64(p)*(float64(y)+1)
+			dx := float64(origSpriteWidth)*float64(x) + float64(p)*(float64(x)+1)
+			dy := float64(origSpriteHeight)*float64(y) + float64(p)*(float64(y)+1)
 
 			// draw padding first
 			d := func(op *ebiten.DrawImageOptions) {
@@ -58,10 +84,16 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 						(y+1)*s.SpriteHeight,
 					)).(*ebiten.Image), op)
 			}
+			c := options.OutlineColor
 			for zx := -p / 2; zx <= p/2; zx++ {
 				if zx != 0 {
 					op := &ebiten.DrawImageOptions{}
 					op.GeoM.Translate(dx+float64(zx), dy)
+					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
+					if options.OutlineThickness > 0 {
+						op.ColorM.Scale(0, 0, 0, 1)
+						op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+					}
 					d(op)
 				}
 			}
@@ -69,20 +101,41 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 				if zy != 0 {
 					op := &ebiten.DrawImageOptions{}
 					op.GeoM.Translate(dx, dy+float64(zy))
+					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
+					if options.OutlineThickness > 0 {
+						op.ColorM.Scale(0, 0, 0, 1)
+						op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+					}
 					d(op)
 				}
 			}
 
 			// clear area, if a tile isn't full width, it'll be the wrong size (2px will be increased to 4px wide!)
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(dx, dy)
+			op.GeoM.Translate(dx-float64(options.OutlineThickness), dy-float64(options.OutlineThickness))
+			op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
 			op.CompositeMode = ebiten.CompositeModeClear
 			paddedImg.DrawImage(eraser, op)
+
+			// draw outline
+			for zy := -options.OutlineThickness; zy <= options.OutlineThickness; zy++ {
+				for zx := -options.OutlineThickness; zx <= options.OutlineThickness; zx++ {
+					op := &ebiten.DrawImageOptions{}
+					op.ColorM.Scale(0, 0, 0, 1)
+					op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+					op.GeoM.Translate(
+						dx+float64(zx)/float64(options.Scale),
+						dy+float64(zy)/float64(options.Scale))
+					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
+					d(op)
+				}
+			}
 
 			// draw the sprite itself
 			op = &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(
 				dx, dy)
+			op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
 			paddedImg.DrawImage(img.SubImage(
 				image.Rect(
 					x*s.SpriteWidth,
@@ -92,17 +145,27 @@ func NewSpriteSheet(img *ebiten.Image, spriteWidth, spriteHeight int, scale floa
 				)).(*ebiten.Image), op)
 
 			// save subimage/reference
+			ot := float64(options.OutlineThickness)
 			s.Sprites[x+y*s.SpritesWide] = paddedImg.SubImage(
 				image.Rect(
-					int(dx),
-					int(dy),
-					int(dx)+spriteWidth,
-					int(dy)+spriteHeight,
+					int(dx-ot)*options.Scale,
+					int(dy-ot)*options.Scale,
+					(int(dx)+s.SpriteWidth+int(ot))*options.Scale,
+					(int(dy)+s.SpriteHeight+int(ot))*options.Scale,
 				)).(*ebiten.Image)
+
+			log.Println(int(dx-ot)*options.Scale,
+				int(dy-ot)*options.Scale,
+				(int(dx)+s.SpriteWidth+int(ot))*options.Scale,
+				(int(dy)+s.SpriteHeight+int(ot))*options.Scale)
 		}
 	}
 
 	s.PaddedImage = paddedImg
+	s.SpriteWidth += options.OutlineThickness
+	s.SpriteHeight += options.OutlineThickness
+	s.SpriteWidth *= options.Scale
+	s.SpriteHeight *= options.Scale
 
 	return s
 }
