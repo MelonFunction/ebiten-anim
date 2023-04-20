@@ -4,7 +4,6 @@ package anim
 import (
 	"image"
 	"image/color"
-	"log"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -153,11 +152,6 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 					(int(dx)+s.SpriteWidth+int(ot))*options.Scale,
 					(int(dy)+s.SpriteHeight+int(ot))*options.Scale,
 				)).(*ebiten.Image)
-
-			log.Println(int(dx-ot)*options.Scale,
-				int(dy-ot)*options.Scale,
-				(int(dx)+s.SpriteWidth+int(ot))*options.Scale,
-				(int(dy)+s.SpriteHeight+int(ot))*options.Scale)
 		}
 	}
 
