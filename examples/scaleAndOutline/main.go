@@ -26,8 +26,10 @@ var (
 
 	SpriteSheet *anim.SpriteSheet
 
-	alreadyDrew bool
-	surface     *ebiten.Image
+	alreadyDrew  bool
+	surface      *ebiten.Image
+	drawDebug    = true
+	debugKeyDown = false
 
 	ErrNormalExit = errors.New("Normal exit")
 )
@@ -40,6 +42,14 @@ type Game struct{}
 func (g *Game) Update() error {
 	if ebiten.IsKeyPressed(ebiten.KeyEscape) {
 		return ErrNormalExit
+	}
+	if ebiten.IsKeyPressed(ebiten.KeyD) {
+		if !debugKeyDown {
+			drawDebug = !drawDebug
+			debugKeyDown = true
+		}
+	} else {
+		debugKeyDown = false
 	}
 
 	return nil
@@ -58,15 +68,18 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		op.GeoM.Rotate(math.Pi / 4)
 		screen.DrawImage(surface, op)
 
-		fill := ebiten.NewImageFromImage(SpriteSheet.PaddedImage)
-		fill.Fill(color.RGBA{128, 0, 128, 128})
-		op = &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(8, 8)
-		screen.DrawImage(fill, op)
+		if drawDebug {
+			fill := ebiten.NewImageFromImage(SpriteSheet.PaddedImage)
+			fill.Fill(color.RGBA{128, 0, 128, 128})
+			op = &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(8, 8)
+			screen.DrawImage(fill, op)
 
-		op = &ebiten.DrawImageOptions{}
-		op.GeoM.Scale(8, 8)
-		screen.DrawImage(SpriteSheet.PaddedImage, op)
+			op = &ebiten.DrawImageOptions{}
+			op.GeoM.Scale(8, 8)
+			screen.DrawImage(SpriteSheet.PaddedImage, op)
+		}
+
 		return
 	}
 	alreadyDrew = true
@@ -93,7 +106,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeigh
 func main() {
 	game := &Game{}
 	ebiten.SetWindowSize(WindowWidth, WindowHeight)
-	ebiten.SetWindowTitle("Scale and outline example")
+	ebiten.SetWindowTitle("Scale and outline example - Press D to toggle debug overlay")
 	ebiten.SetWindowResizable(true)
 
 	surface = ebiten.NewImage(ebiten.WindowSize())
