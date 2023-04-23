@@ -117,7 +117,7 @@ func main() {
 			SpriteSheet = anim.NewSpriteSheet(sprites, 8, 8, anim.SpriteSheetOptions{
 				Scale:            2,
 				OutlineThickness: 1,
-				OutlineColor:     color.RGBA{255, 0, 0, 255},
+				OutlineColor:     color.RGBA{255, 0, 0, 128},
 			})
 		}
 	} else {

@@ -59,13 +59,21 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 		Scale:        options.Scale,
 	}
 
+	// all white copy of image without any opacity which could ruin outline
+	imgWhite := ebiten.NewImage(img.Size())
+	op := &ebiten.DrawImageOptions{}
+	op.ColorM.Scale(0, 0, 0, 0xff)
+	op.ColorM.Translate(0xff, 0xff, 0xff, 0)
+	imgWhite.DrawImage(img, op)
+
 	p := 2 + options.OutlineThickness*2
 	paddedImg := ebiten.NewImage(
 		(w+(s.SpritesWide+1)*p)*options.Scale,
 		(h+(s.SpritesHigh+1)*p)*options.Scale)
-	eraser := ebiten.NewImage(origSpriteWidth+options.OutlineThickness*2, origSpriteHeight+options.OutlineThickness*2)
+	eraser := ebiten.NewImage(
+		origSpriteWidth+options.OutlineThickness*2,
+		origSpriteHeight+options.OutlineThickness*2)
 	eraser.Fill(color.RGBA{255, 255, 255, 255})
-	// paddedImg.Fill(color.RGBA{255, 0, 255, 255})
 
 	s.Sprites = make([]*ebiten.Image, s.SpritesWide*s.SpritesHigh)
 	for x := 0; x < s.SpritesWide; x++ {
@@ -75,7 +83,7 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 
 			// draw padding first
 			d := func(op *ebiten.DrawImageOptions) {
-				paddedImg.DrawImage(img.SubImage(
+				paddedImg.DrawImage(imgWhite.SubImage(
 					image.Rect(
 						x*s.SpriteWidth,
 						y*s.SpriteHeight,
@@ -120,8 +128,10 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 			for zy := -options.OutlineThickness; zy <= options.OutlineThickness; zy++ {
 				for zx := -options.OutlineThickness; zx <= options.OutlineThickness; zx++ {
 					op := &ebiten.DrawImageOptions{}
-					op.ColorM.Scale(0, 0, 0, 100)
-					op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+
+					// op.ColorM.Scale(0, 0, 0, 1)
+					// op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+
 					op.GeoM.Translate(
 						dx+float64(zx)/float64(options.Scale),
 						dy+float64(zy)/float64(options.Scale))
@@ -129,6 +139,16 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 					d(op)
 				}
 			}
+
+			// fix outlines
+			// paddedTemp := ebiten.NewImage(paddedImg.Size())
+			// op = &ebiten.DrawImageOptions{}
+			// op.ColorM.Scale(0, 0, 0, float64(c.A)/0xff)
+			// op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+			// paddedTemp.DrawImage(paddedImg, op)
+			// paddedImg.Clear()
+			// paddedImg.DrawImage(paddedTemp, &ebiten.DrawImageOptions{})
+			// paddedTemp.Dispose()
 
 			// cut out sprite from the outline
 			op = &ebiten.DrawImageOptions{}
@@ -176,6 +196,8 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 	s.SpriteHeight += options.OutlineThickness
 	s.SpriteWidth *= options.Scale
 	s.SpriteHeight *= options.Scale
+
+	eraser.Dispose()
 
 	return s
 }
