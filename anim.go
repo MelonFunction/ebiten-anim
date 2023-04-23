@@ -87,7 +87,7 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 
 			// draw padding first
 			d := func(op *ebiten.DrawImageOptions) {
-				paddedImg.DrawImage(imgWhite.SubImage(
+				paddedImg.DrawImage(img.SubImage(
 					image.Rect(
 						x*s.SpriteWidth,
 						y*s.SpriteHeight,
