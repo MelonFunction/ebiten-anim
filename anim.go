@@ -70,11 +70,15 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 	paddedImg := ebiten.NewImage(
 		(w+(s.SpritesWide+1)*p)*options.Scale,
 		(h+(s.SpritesHigh+1)*p)*options.Scale)
+	outlineImg := ebiten.NewImage(
+		(w+(s.SpritesWide+1)*p)*options.Scale,
+		(h+(s.SpritesHigh+1)*p)*options.Scale)
 	eraser := ebiten.NewImage(
 		origSpriteWidth+options.OutlineThickness*2,
 		origSpriteHeight+options.OutlineThickness*2)
 	eraser.Fill(color.RGBA{255, 255, 255, 255})
 
+	c := options.OutlineColor
 	s.Sprites = make([]*ebiten.Image, s.SpritesWide*s.SpritesHigh)
 	for x := 0; x < s.SpritesWide; x++ {
 		for y := 0; y < s.SpritesHigh; y++ {
@@ -91,14 +95,13 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 						(y+1)*s.SpriteHeight,
 					)).(*ebiten.Image), op)
 			}
-			c := options.OutlineColor
 			for zx := -p / 2; zx <= p/2; zx++ {
 				if zx != 0 {
 					op := &ebiten.DrawImageOptions{}
 					op.GeoM.Translate(dx+float64(zx), dy)
 					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
 					if options.OutlineThickness > 0 {
-						op.ColorM.Scale(0, 0, 0, 1)
+						op.ColorM.Scale(0, 0, 0, float64(c.A)/0xff)
 						op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
 					}
 					d(op)
@@ -110,7 +113,7 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 					op.GeoM.Translate(dx, dy+float64(zy))
 					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
 					if options.OutlineThickness > 0 {
-						op.ColorM.Scale(0, 0, 0, 1)
+						op.ColorM.Scale(0, 0, 0, float64(c.A)/0xff)
 						op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
 					}
 					d(op)
@@ -124,31 +127,24 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 			op.CompositeMode = ebiten.CompositeModeClear
 			paddedImg.DrawImage(eraser, op)
 
-			// draw outline
+			// draw outline to the outlineImg
 			for zy := -options.OutlineThickness; zy <= options.OutlineThickness; zy++ {
 				for zx := -options.OutlineThickness; zx <= options.OutlineThickness; zx++ {
 					op := &ebiten.DrawImageOptions{}
-
-					// op.ColorM.Scale(0, 0, 0, 1)
-					// op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
-
 					op.GeoM.Translate(
 						dx+float64(zx)/float64(options.Scale),
 						dy+float64(zy)/float64(options.Scale))
 					op.GeoM.Scale(float64(options.Scale), float64(options.Scale))
-					d(op)
+
+					outlineImg.DrawImage(imgWhite.SubImage(
+						image.Rect(
+							x*s.SpriteWidth,
+							y*s.SpriteHeight,
+							(x+1)*s.SpriteWidth,
+							(y+1)*s.SpriteHeight,
+						)).(*ebiten.Image), op)
 				}
 			}
-
-			// fix outlines
-			// paddedTemp := ebiten.NewImage(paddedImg.Size())
-			// op = &ebiten.DrawImageOptions{}
-			// op.ColorM.Scale(0, 0, 0, float64(c.A)/0xff)
-			// op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
-			// paddedTemp.DrawImage(paddedImg, op)
-			// paddedImg.Clear()
-			// paddedImg.DrawImage(paddedTemp, &ebiten.DrawImageOptions{})
-			// paddedTemp.Dispose()
 
 			// cut out sprite from the outline
 			op = &ebiten.DrawImageOptions{}
@@ -158,7 +154,7 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 			op.ColorM.Scale(0, 0, 0, 100)
 			op.ColorM.Translate(1000/0xff, 1000/0xff, 1000/0xff, 0)
 			op.CompositeMode = ebiten.CompositeModeDestinationOut
-			paddedImg.DrawImage(img.SubImage(
+			outlineImg.DrawImage(img.SubImage(
 				image.Rect(
 					x*s.SpriteWidth,
 					y*s.SpriteHeight,
@@ -190,6 +186,12 @@ func NewSpriteSheet(img *ebiten.Image, origSpriteWidth, origSpriteHeight int, op
 				)).(*ebiten.Image)
 		}
 	}
+
+	// draw outlines with the correct color
+	op = &ebiten.DrawImageOptions{}
+	op.ColorM.Scale(0, 0, 0, float64(c.A)/0xff)
+	op.ColorM.Translate(float64(c.R)/0xff, float64(c.G)/0xff, float64(c.B)/0xff, 0)
+	paddedImg.DrawImage(outlineImg, op)
 
 	s.PaddedImage = paddedImg
 	s.SpriteWidth += options.OutlineThickness
